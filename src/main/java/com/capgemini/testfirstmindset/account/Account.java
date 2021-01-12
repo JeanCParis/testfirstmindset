@@ -1,21 +1,29 @@
 package com.capgemini.testfirstmindset.account;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
-import java.util.UUID;
+import javax.persistence.Id;
 
 @Builder
 @Getter
+@Setter
+@AllArgsConstructor
+@NoArgsConstructor
 public class Account {
+    @Id
     private String id;
-    private String name;
+
+    private String username;
     private int balance;
 
-    public static Account from(AccountToCreate accountToCreate) {
+    public static Account from(AccountDTO accountDTO) {
         return Account.builder()
-                .id(UUID.randomUUID().toString())
-                .name(accountToCreate.getName())
+                .username(accountDTO.getUsername())
+                .balance(accountDTO.getBalance())
                 .build();
     }
 

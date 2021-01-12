@@ -1,0 +1,10 @@
+#Config file for work with the docker instance of integration
+spring:
+  #Database Settings
+  datasource-contact:
+    driverClassName: com.mysql.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/bank
+    username: bank
+    password: bankpwd
+
+uri: http://localhost:8080

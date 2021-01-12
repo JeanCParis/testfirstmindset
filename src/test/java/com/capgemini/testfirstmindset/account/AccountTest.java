@@ -9,19 +9,20 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 class AccountTest {
 
     @Test
-    public void shouldCreateAccountWithNullBalance() {
+    public void shouldCreateAccount() {
         // Arrange
-        AccountToCreate accountToCreate = AccountToCreate.builder()
-                .name("name")
+        AccountDTO accountDTO = AccountDTO.builder()
+                .username("name")
+                .balance(1000)
                 .build();
 
         //Act
-        Account account = Account.from(accountToCreate);
+        Account account = Account.from(accountDTO);
 
         //Assert
         assertAll(
-                () -> assertThat(account.getBalance()).isEqualTo(0),
-                () ->  assertThat(account.getName()).isEqualTo("name")
+                () -> assertThat(account.getBalance()).isEqualTo(1000),
+                () ->  assertThat(account.getUsername()).isEqualTo("name")
         );
     }
 
@@ -49,7 +50,7 @@ class AccountTest {
         //Act
         //Assert
         assertThatExceptionOfType(InsufficientFundsException.class).isThrownBy(() -> account.withdraw(1500))
-                .withMessage("Insufficient funds : withdraw of 1500.0 requested while only 1000.0 available");
+                .withMessage("Insufficient funds : withdraw of 1500 requested while only 1000 available");
     }
 
 

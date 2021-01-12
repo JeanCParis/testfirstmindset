@@ -1,13 +1,12 @@
 package com.capgemini.testfirstmindset;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Configuration;
 
-@SpringBootTest
+@Configuration
 class TestfirstmindsetApplicationTests {
 
     @Test
     void contextLoads() {
     }
-
 }
