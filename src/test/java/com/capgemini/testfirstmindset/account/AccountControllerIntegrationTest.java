@@ -6,6 +6,8 @@ import org.json.JSONObject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -163,15 +165,16 @@ public class AccountControllerIntegrationTest {
                 .andExpect(status().isNotFound());
     }
 
-    @Test
-    public void shouldReturnBadRequest_whenInvalidAmountForWithdraw() throws Exception {
+    @ParameterizedTest
+    @ValueSource(ints = {0, -100})
+    public void shouldReturnBadRequest_whenInvalidAmountForWithdraw(int amount) throws Exception {
         //Arrange
         String accountId = accountDao.create(AccountDTO.builder().username("username").balance(400).build());
 
-        JSONObject content = new JSONObject().put("amount", 0);
+            JSONObject content = new JSONObject().put("amount", amount);
 
         ApiErrors apiErrors = new ApiErrors();
-        apiErrors.addError("invalid_amount","amount cannot be 0");
+        apiErrors.addError("invalid_amount", "amount must be strictly positive");
 
         //Act
         mockMvc.perform(put("/accounts/{id}/withdraw", accountId)

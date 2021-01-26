@@ -3,11 +3,13 @@ package com.capgemini.testfirstmindset.withdraw;
 import com.capgemini.testfirstmindset.common.ApiErrors;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
-class WithdrawValidatorTest {
+class WithdrawDTOValidatorTest {
     private WithdrawDTOValidator withdrawDTOValidator;
 
     @BeforeEach
@@ -16,7 +18,7 @@ class WithdrawValidatorTest {
     }
 
     @Test
-    void shouldReturnNoError_whenAmountIsNotZero() {
+    void shouldReturnNoError_whenAmountIsStrictlyPositive() {
         //Arrange
         WithdrawDTO withdrawDTO = new WithdrawDTO(100);
 
@@ -27,10 +29,11 @@ class WithdrawValidatorTest {
         assertThat(apiErrors.hasErrors()).isFalse();
     }
 
-    @Test
-    void shouldReturnError_whenAmountIsZero() {
+    @ParameterizedTest
+    @ValueSource(ints = {0, -100})
+    void shouldReturnError_whenAmountIsSmallerOrEqualToZero(int amount) {
         //Arrange
-        WithdrawDTO withdrawDTO = new WithdrawDTO(0);
+        WithdrawDTO withdrawDTO = new WithdrawDTO(amount);
 
         //Act
         ApiErrors apiErrors = withdrawDTOValidator.validate(withdrawDTO);
@@ -39,7 +42,7 @@ class WithdrawValidatorTest {
         assertAll(
                 () -> assertThat(apiErrors.hasErrors()).isTrue(),
                 () -> assertThat(apiErrors.getErrors().get(0).getCode()).isEqualTo("invalid_amount"),
-                () -> assertThat(apiErrors.getErrors().get(0).getMessage()).isEqualTo("amount cannot be 0")
+                () -> assertThat(apiErrors.getErrors().get(0).getMessage()).isEqualTo("amount must be strictly positive")
         );
     }
 }
