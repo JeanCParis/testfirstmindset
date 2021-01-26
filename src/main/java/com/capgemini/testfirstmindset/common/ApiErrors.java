@@ -1,6 +1,6 @@
 package com.capgemini.testfirstmindset.common;
 
-import lombok.Builder;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
@@ -13,6 +13,7 @@ import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
 @Getter
 @NoArgsConstructor
 @ToString
+@EqualsAndHashCode
 public class ApiErrors {
     private List<ApiError> errors = new ArrayList<>();
 

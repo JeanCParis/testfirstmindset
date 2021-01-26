@@ -2,6 +2,8 @@ package com.capgemini.testfirstmindset.account;
 
 import com.capgemini.testfirstmindset.common.ApiCreatedResourceBody;
 import com.capgemini.testfirstmindset.common.ApiErrors;
+import com.capgemini.testfirstmindset.transfer.TransferDTO;
+import com.capgemini.testfirstmindset.transfer.TransferDTOValidator;
 import com.capgemini.testfirstmindset.withdraw.WithdrawDTO;
 import com.capgemini.testfirstmindset.withdraw.WithdrawDTOValidator;
 import io.swagger.annotations.Api;
@@ -39,10 +41,12 @@ public class AccountController {
 
     private AccountService accountService;
     private WithdrawDTOValidator withdrawDTOValidator;
+    private TransferDTOValidator transferDTOValidator;
 
-    public AccountController(AccountService accountService, WithdrawDTOValidator withdrawDTOValidator) {
+    public AccountController(AccountService accountService, WithdrawDTOValidator withdrawDTOValidator, TransferDTOValidator transferDTOValidator) {
         this.accountService = accountService;
         this.withdrawDTOValidator = withdrawDTOValidator;
+        this.transferDTOValidator = transferDTOValidator;
     }
 
     @GetMapping(value = "/{id}")
@@ -125,6 +129,41 @@ public class AccountController {
             return ResponseEntity
                     .status(BAD_REQUEST)
                     .body(errors);
+        }
+
+        return new ResponseEntity(OK);
+    }
+
+    @PutMapping(value = "/{id}/transfer")
+    @ApiOperation(value = "Transfer from account")
+    @ApiImplicitParams({
+            @ApiImplicitParam(name = "id", value = "The account's id", dataType = "string", paramType = "path", required = true),
+    })
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "Withdraw done"),
+            @ApiResponse(code = 400, message = "Bad request"),
+            @ApiResponse(code = 404, message = "Not found"),
+            @ApiResponse(code = 500, message = "Internal Server Error")})
+    public ResponseEntity withdraw(@PathVariable String id, @RequestBody TransferDTO transferDTO) {
+
+        Optional<Account> originatorAccount = accountService.getAccountById(id);
+        if (originatorAccount.isEmpty()) {
+            return new ResponseEntity(NOT_FOUND);
+        }
+
+        ApiErrors dtoErrors = transferDTOValidator.validate(transferDTO);
+        if (dtoErrors.hasErrors()) {
+            return ResponseEntity
+                    .status(BAD_REQUEST)
+                    .body(dtoErrors);
+        }
+
+        ApiErrors apiErrors = accountService.performTransfer(originatorAccount.get(), transferDTO);
+        if (apiErrors.hasErrors()) {
+
+            return ResponseEntity
+                    .status(BAD_REQUEST)
+                    .body(apiErrors);
         }
 
         return new ResponseEntity(OK);
