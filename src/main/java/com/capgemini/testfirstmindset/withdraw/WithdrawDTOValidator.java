@@ -9,8 +9,8 @@ public class WithdrawDTOValidator {
     public ApiErrors validate(WithdrawDTO withdrawDTO) {
         ApiErrors errors = new ApiErrors();
 
-        if (withdrawDTO.getAmount() == 0) {
-            errors.addError("invalid_amount", "amount cannot be 0");
+        if (withdrawDTO.getAmount() <= 0) {
+            errors.addError("invalid_amount", "amount must be strictly positive");
         }
 
         return errors;
