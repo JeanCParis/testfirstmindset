@@ -1,13 +1,12 @@
 package com.capgemini.testfirstmindset.transfer;
 
-import lombok.Builder;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 @Builder
 @Getter
 @Setter
+@AllArgsConstructor
+@NoArgsConstructor
 public class TransferDTO {
     private String beneficiary;
     private Integer amount;
