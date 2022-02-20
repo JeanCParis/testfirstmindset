@@ -1,8 +1,12 @@
 package com.capgemini.testfirstmindset.account;
 
 import com.capgemini.testfirstmindset.common.ApiErrors;
+import com.capgemini.testfirstmindset.transfer.TransferDTO;
+import com.capgemini.testfirstmindset.transfer.TransferDTOValidator;
+import com.capgemini.testfirstmindset.withdraw.WithdrawDTO;
 import com.capgemini.testfirstmindset.withdraw.WithdrawDTOValidator;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -34,6 +38,8 @@ class AccountControllerTest {
     private AccountService accountService;
     @MockBean
     private WithdrawDTOValidator withdrawDTOValidator;
+    @MockBean
+    private TransferDTOValidator transferDTOValidator;
 
     @Autowired
     private MockMvc mockMvc;
@@ -204,6 +210,75 @@ class AccountControllerTest {
         //Act
         mockMvc.perform(put("/accounts/{id}/withdraw", "someId")
                 .content(content.toString())
+                .contentType("application/json;charset=UTF-8"))
+                //Assert
+                .andExpect(status().isBadRequest())
+                .andExpect(content().json(new ObjectMapper().writeValueAsString(apiErrors)));
+    }
+
+    @Test
+    public void shouldTransferMoney_whenOriginatorAndBeneficiaryExist_AndSufficientFunds() throws Exception {
+        //Arrange
+        JSONObject content = new JSONObject()
+                .put("beneficiary", "beneficiaryAccountId")
+                .put("amount", 100);
+
+        Account originatorAccount = Account.builder()
+                .id("originatorAccountId")
+                .username("originator")
+                .balance(1000)
+                .build();
+
+        //Mock
+        when(accountService.getAccountById("originatorAccountId")).thenReturn(Optional.of(originatorAccount));
+        when(transferDTOValidator.validate(any())).thenReturn(new ApiErrors());
+        when(accountService.performTransfer(any(), any())).thenReturn(new ApiErrors());
+
+        //Act
+        mockMvc.perform(put("/accounts/{id}/transfer", "originatorAccountId")
+                .content(content.toString())
+                .contentType("application/json;charset=UTF-8"))
+                //Assert
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    public void shouldThrowNotFound_whenOriginatorDoesNotExist() throws Exception {
+        //Arrange
+        JSONObject content = new JSONObject()
+                .put("beneficiary", "beneficiaryAccountId")
+                .put("amount", 100);
+
+        //Mock
+        when(accountService.getAccountById("originatorAccountId")).thenReturn(Optional.empty());
+
+        //Act
+        mockMvc.perform(put("/accounts/{id}/transfer", "originatorAccountId")
+                .content(content.toString())
+                .contentType("application/json;charset=UTF-8"))
+                //Assert
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    public void shouldThrowBadRequest_whenBeneficiaryDoesNotExist() throws Exception {
+        //Arrange
+        Account originatorAccount = Account.builder()
+                .id("originatorAccountId")
+                .username("originator")
+                .balance(1000)
+                .build();
+
+        ApiErrors apiErrors = new ApiErrors();
+        apiErrors.addError("mandatory_beneficiary","Beneficiary field is mandatory");
+
+        //Mock
+        when(accountService.getAccountById("originatorAccountId")).thenReturn(Optional.of(originatorAccount));
+        when(transferDTOValidator.validate(any())).thenReturn(apiErrors);
+
+        //Act
+        mockMvc.perform(put("/accounts/{id}/transfer", "originatorAccountId")
+                .content(new JSONObject().toString())
                 .contentType("application/json;charset=UTF-8"))
                 //Assert
                 .andExpect(status().isBadRequest())

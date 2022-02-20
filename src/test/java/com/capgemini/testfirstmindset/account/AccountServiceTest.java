@@ -2,6 +2,7 @@ package com.capgemini.testfirstmindset.account;
 
 import com.capgemini.testfirstmindset.common.ApiConflictError;
 import com.capgemini.testfirstmindset.common.ApiErrors;
+import com.capgemini.testfirstmindset.transfer.TransferDTO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -12,8 +13,11 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -125,8 +129,11 @@ class AccountServiceTest {
         ApiErrors errors = accountService.withdrawFromAccount(accountWithSufficientFunds, 400);
 
         //Assert
-        assertThat(errors.hasErrors()).isFalse();
-        verify(accountDao).setBalance("knownId", 600);
+        assertAll(
+                () -> assertThat(errors.hasErrors()).isFalse(),
+                () -> verify(accountDao).setBalance("knownId", 600)
+        );
+
     }
 
     @Test
@@ -145,6 +152,100 @@ class AccountServiceTest {
                 () -> assertThat(errors.hasErrors()).isTrue(),
                 () -> assertThat(errors.getErrors().get(0).getCode()).isEqualTo("insufficient_funds"),
                 () -> assertThat(errors.getErrors().get(0).getMessage()).isEqualTo("message")
+        );
+    }
+
+    @Test
+    public void shouldReturnNoError_whenSufficientFunds_andBeneficiaryExists() {
+        //Arrange
+        Account originatorAccount = Account.builder()
+                .id("originatorAccountId")
+                .username("originator")
+                .balance(1000)
+                .build();
+
+        TransferDTO transferDTO = TransferDTO.builder()
+                .beneficiary("beneficiaryAccountId")
+                .amount(100)
+                .build();
+
+        Account beneficiaryAccount = Account.builder()
+                .id("beneficiaryAccountId")
+                .username("beneficiary")
+                .balance(1000)
+                .build();
+        //Mock
+        when(accountService.getAccountById("beneficiaryAccountId")).thenReturn(Optional.of(beneficiaryAccount));
+
+        //Act
+        ApiErrors apiErrors = accountService.performTransfer(originatorAccount, transferDTO);
+
+        //Assert
+        assertAll(
+                () -> assertThat(apiErrors.hasErrors()).isFalse(),
+                () -> accountDao.setBalance("originatorAccountId", 900),
+                () -> accountDao.setBalance("originatorAccountId", 1100)
+        );
+    }
+
+    @Test
+    public void shouldReturnError_whenInsufficientFunds() {
+        //Arrange
+        Account originatorAccount = Account.builder()
+                .id("originatorAccountId")
+                .username("originator")
+                .balance(1000)
+                .build();
+
+        TransferDTO transferDTO = TransferDTO.builder()
+                .beneficiary("beneficiaryAccountId")
+                .amount(1001)
+                .build();
+
+        ApiErrors expectedErrors = new ApiErrors();
+        expectedErrors.addError("insufficient_funds", "Insufficient funds : withdraw of 1001 requested while only 1000 available");
+
+        //Act
+        ApiErrors apiErrors = accountService.performTransfer(originatorAccount, transferDTO);
+
+        //Assert
+        assertAll(
+                () -> assertThat(apiErrors.hasErrors()).isTrue(),
+                () -> assertThat(apiErrors.getErrors().size()).isEqualTo(1),
+                () -> assertThat(apiErrors).isEqualTo(expectedErrors),
+                () -> verify(accountDao, never()).setBalance(any(), anyInt())
+        );
+    }
+
+    @Test
+    public void shouldReturnError_whenBeneficiaryIsUnknown() {
+        //Arrange
+        Account originatorAccount = Account.builder()
+                .id("originatorAccountId")
+                .username("originator")
+                .balance(1000)
+                .build();
+
+        TransferDTO transferDTO = TransferDTO.builder()
+                .beneficiary("unknownBeneficiaryAccountId")
+                .amount(1000)
+                .build();
+
+        ApiErrors expectedErrors = new ApiErrors();
+        expectedErrors.addError("unknown_beneficiary", "Account with id unknownBeneficiaryAccountId is unknown");
+
+        //Mock
+        when(accountDao.getAccountById("unknownBeneficiaryAccountId")).thenReturn(Optional.empty());
+
+        //Act
+        ApiErrors apiErrors = accountService.performTransfer(originatorAccount, transferDTO);
+
+        //Assert
+        assertAll(
+                () -> assertThat(apiErrors.hasErrors()).isTrue(),
+                () -> assertThat(apiErrors.getErrors().size()).isEqualTo(1),
+                () -> assertThat(apiErrors).isEqualTo(expectedErrors),
+                () -> verify(accountDao, never()).setBalance(any(), anyInt())
         );
     }
 }

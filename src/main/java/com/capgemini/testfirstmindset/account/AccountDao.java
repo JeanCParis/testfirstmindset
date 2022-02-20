@@ -2,6 +2,7 @@ package com.capgemini.testfirstmindset.account;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
@@ -15,17 +16,14 @@ import static java.util.UUID.randomUUID;
 public class AccountDao {
     private final JdbcTemplate jdbcTemplate;
 
-    private final AccountRowMapper accountRowMapper;
-
     private static final String accountColumns = String.join(",", List.of(
             "ID",
             "USERNAME",
             "BALANCE"
     ));
 
-    public AccountDao(JdbcTemplate jdbcTemplate, AccountRowMapper accountRowMapper) {
+    public AccountDao(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
-        this.accountRowMapper = accountRowMapper;
     }
 
     public String create(AccountDTO accountDTO) throws DataAccessException {
@@ -50,7 +48,7 @@ public class AccountDao {
                 .toString();
 
         try {
-            return Optional.of(jdbcTemplate.queryForObject(query, accountRowMapper, accountId));
+            return Optional.of(jdbcTemplate.queryForObject(query, new BeanPropertyRowMapper<>(Account.class), accountId));
         } catch (Exception exception) {
             return Optional.empty();
         }
@@ -75,7 +73,7 @@ public class AccountDao {
                 .toString();
 
         try {
-            return Optional.of(jdbcTemplate.queryForObject(query, accountRowMapper, username));
+            return Optional.of(jdbcTemplate.queryForObject(query, new BeanPropertyRowMapper<>(Account.class), username));
         } catch (Exception exception) {
             return Optional.empty();
         }

@@ -1,0 +1,10 @@
+spring:
+  #Database Settings
+  datasource:
+    driverClassName: com.mysql.cj.jdbc.Driver
+    jdbc-url: jdbc:mysql://localhost:3306/bank
+    username: bank
+    password: bankpwd
+
+server:
+  port: 8080

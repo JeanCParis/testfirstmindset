@@ -23,7 +23,7 @@ class AccountDaoTest {
 
     @BeforeEach
     public void setup() {
-        accountDao = new AccountDao(jdbcTemplate, new AccountRowMapper());
+        accountDao = new AccountDao(jdbcTemplate);
     }
 
     @Test

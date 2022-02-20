@@ -12,5 +12,5 @@ import lombok.Setter;
 @AllArgsConstructor
 @NoArgsConstructor
 public class WithdrawDTO {
-    private int amount;
+    private Integer amount;
 }
